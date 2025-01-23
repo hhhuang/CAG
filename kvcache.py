@@ -323,7 +323,12 @@ def kvcache_test(args: argparse.Namespace):
     kvcache_path = "./data_cache/cache_knowledges.pt"
 
     knowledges = '\n\n\n\n\n\n'.join(text_list)
-    knowledge_cache, prepare_time = prepare_kvcache(knowledges, filepath=kvcache_path, answer_instruction=answer_instruction)
+    knowledge_cache, prepare_time = prepare_kvcache(
+        knowledges, 
+        filepath=kvcache_path, 
+        answer_instruction=answer_instruction,
+        batch_size=args.batch_size
+    )
     kv_len = knowledge_cache.key_cache[0].shape[-2]
     print(f"KVcache prepared in {prepare_time} seconds")
     with open(args.output, "a") as f:
@@ -476,6 +481,12 @@ if __name__ == "__main__":
                                  'squad-dev', 'squad-train',
                                  'hotpotqa-dev',  'hotpotqa-train', 'hotpotqa-test'])
     parser.add_argument('--randomSeed', required=False, default=None, type=int, help='Random seed to use')
+    parser.add_argument(
+        '--batch_size', 
+        type=int, 
+        default=1000,
+        help='Batch size for processing large documents (default: 1000)'
+    )
     # 48 Articles, each article average 40~50 paragraph, each average 5~10 questions
 
     args = parser.parse_args()

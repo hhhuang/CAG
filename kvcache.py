@@ -168,7 +168,7 @@ def get_bert_similarity(response, ground_truth):
     return cosine_score.item()
 
 
-def prepare_kvcache(documents, filepath: str = "./data_cache/cache_knowledges.pt", answer_instruction: str = None):
+def prepare_kvcache(documents, filepath: str, answer_instruction: str = None, batch_size: int = 1000):
     # Prepare the knowledges kvcache
 
     if answer_instruction is None:
@@ -187,12 +187,20 @@ def prepare_kvcache(documents, filepath: str = "./data_cache/cache_knowledges.pt
     """
     # Get the knowledge cache
     t1 = time()
-    kv = preprocess_knowledge(model, tokenizer, knowledges)
-    print("kvlen: ", kv.key_cache[0].shape[-2])
-    write_kv_cache(kv, filepath)
+    # Process large documents in batches
+    doc_chunks = [documents[i:i + batch_size] for i in range(0, len(documents), batch_size)]
+    kv_caches = []
+    
+    for chunk in doc_chunks:
+        chunk_kv = preprocess_knowledge(model, tokenizer, chunk)
+        kv_caches.append(chunk_kv)
+    
+    # Merge KV caches
+    final_kv = merge_kv_caches(kv_caches)
+    write_kv_cache(final_kv, filepath)
     t2 = time()
     logger.info(f"KV cache prepared in {t2 - t1:.2f} seconds.")
-    return kv, t2 - t1
+    return final_kv, t2 - t1
 
 
 def get_kis_dataset(filepath: str):

@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as F
 import pandas as pd
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from llama_index.core import VectorStoreIndex, Document
@@ -54,7 +53,7 @@ from time import time
 
 from llama_index.core import Settings
 
-def getOpenAIRetriever(documents: list[str], similarity_top_k: int = 1):
+def getOpenAIRetriever(documents: list[Document], similarity_top_k: int = 1):
     """OpenAI RAG model"""
     import openai
     if not OPENAI_API_KEY:
@@ -77,7 +76,7 @@ def getOpenAIRetriever(documents: list[str], similarity_top_k: int = 1):
     return OpenAI_retriever, t2 - t1
     
 
-def getGeminiRetriever(documents: list[str], similarity_top_k: int = 1):
+def getGeminiRetriever(documents: list[Document], similarity_top_k: int = 1):
     """Gemini Embedding RAG model"""
     if not GOOGLE_API_KEY:
         raise ValueError("GOOGLE_API_KEY not found")
@@ -94,7 +93,7 @@ def getGeminiRetriever(documents: list[str], similarity_top_k: int = 1):
     logger.info(f"Gemini retriever prepared in {t2 - t1:.2f} seconds.")
     return Gemini_retriever, t2 - t1
     
-def getBM25Retriever(documents: list[str], similarity_top_k: int = 1):
+def getBM25Retriever(documents: list[Document], similarity_top_k: int = 1):
     from llama_index.core.node_parser import SentenceSplitter  
     from llama_index.retrievers.bm25 import BM25Retriever
     import Stemmer
@@ -115,7 +114,7 @@ def getBM25Retriever(documents: list[str], similarity_top_k: int = 1):
 
     return bm25_retriever, t2 - t1
 
-def getJinaRetriever(documents: list[str], similarity_top_k: int = 1):
+def getJinaRetriever(documents: list[Document], similarity_top_k: int = 1):
     """Jina Embedding model"""
     if not JINA_API_KEY:
         raise ValueError("JINA_API_KEY not found")
@@ -164,25 +163,26 @@ def parse_squad_data(raw):
     
     return dataset
 
-def get_squad_dataset(filepath: str, max_knowledge: int = None, max_paragraph: int = None, max_questions: int = None):
+def get_squad_dataset(filepath: str, max_knowledge: int | None = None, max_paragraph: int | None = None, max_questions: int | None = None):
     # Open and read the JSON file
     with open(filepath, 'r') as file:
         data = json.load(file)
     # Parse the SQuAD data
     parsed_data = parse_squad_data(data)
     
-    print("max_knowledge", max_knowledge, "max_paragraph", max_paragraph, "max_questions", max_questions)
-    
     # Set the limit Maximum Articles, use all Articles if max_knowledge is None or greater than the number of Articles
     max_knowledge = max_knowledge if max_knowledge != None and max_knowledge < len(parsed_data['ki_text']) else len(parsed_data['ki_text'])
+    max_paragraph = max_paragraph if max_knowledge == 1 else None
+    
+    print("max_knowledge", max_knowledge, "max_paragraph", max_paragraph, "max_questions", max_questions)
     
     # Shuffle the Articles and Questions
     if rand_seed != None:
         random.seed(rand_seed)
         random.shuffle(parsed_data["ki_text"])
         random.shuffle(parsed_data["qas"])
-        k_ids = [i['id'] for i in parsed_data["ki_text"][:max_knowledge]]
 
+    k_ids = [i['id'] for i in parsed_data["ki_text"][:max_knowledge]]
         
     text_list = []
     # Get the knowledge Articles for at most max_knowledge, or all Articles if max_knowledge is None
@@ -200,7 +200,7 @@ def get_squad_dataset(filepath: str, max_knowledge: int = None, max_paragraph: i
     return text_list, dataset
 
 
-def get_hotpotqa_dataset(filepath: str, max_knowledge: int = None):
+def get_hotpotqa_dataset(filepath: str, max_knowledge: int | None = None):
     # Open and read the JSON
     with open (filepath, "r") as file:
         data = json.load(file)
@@ -219,7 +219,7 @@ def get_hotpotqa_dataset(filepath: str, max_knowledge: int = None):
         max_knowledge = min(max_knowledge, len(data))
     
     text_list = []
-    for i, qa in enumerate(data[:max_knowledge]):
+    for _, qa in enumerate(data[:max_knowledge]):
         context = qa['context']
         context = [ c[0] + ": \n" + "".join(c[1]) for c in context ]
         article = "\n\n".join(context)
@@ -230,6 +230,8 @@ def get_hotpotqa_dataset(filepath: str, max_knowledge: int = None):
     
 def rag_test(args: argparse.Namespace):
     answer_instruction = None
+    text_list = []
+    dataset = []
     if args.dataset == "kis_sample":
         datapath = "./datasets/rag_sample_qas_from_kis.csv"
         text_list, dataset = get_kis_dataset(datapath)
@@ -246,7 +248,7 @@ def rag_test(args: argparse.Namespace):
     if args.dataset == "hotpotqa-dev":
         datapath = "./datasets/hotpotqa/hotpot_dev_fullwiki_v1.json"
         text_list, dataset = get_hotpotqa_dataset(datapath, args.maxKnowledge)
-        answer_instruction
+        answer_instruction = "Answer the question with a super short answer."
     if args.dataset == "hotpotqa-test":
         datapath = "./datasets/hotpotqa/hotpot_test_fullwiki_v1.json"
         text_list, dataset = get_hotpotqa_dataset(datapath, args.maxKnowledge)
@@ -259,10 +261,11 @@ def rag_test(args: argparse.Namespace):
     if answer_instruction != None:
         answer_instruction = "Answer the question with a super short answer."
     
-    kvcache_path = "./data_cache/cache_knowledges.pt"
     # document indexing for the rag retriever
     documents = [Document(text=t) for t in text_list]
     
+    retriever = None
+    prepare_time = 0.0
     if args.index == "gemini":
         retriever, prepare_time = getGeminiRetriever(documents, similarity_top_k=args.topk)
     if args.index == "openai":
@@ -273,6 +276,9 @@ def rag_test(args: argparse.Namespace):
     if args.index == "jina":
         retriever, prepare_time = getJinaRetriever(documents, similarity_top_k=args.topk)
         logger.info(f"Testing {args.index.upper()} retriever with {len(documents)} documents.")
+
+    if retriever is None:
+        raise ValueError("No retriever, `--index` not set")
         
     print(f"Retriever {args.index.upper()} prepared in {prepare_time} seconds")
     with open(args.output, "a") as f:

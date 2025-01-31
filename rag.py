@@ -15,21 +15,17 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+from dotenv import load_dotenv
+load_dotenv()
 
+HF_TOKEN = os.getenv("HF_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAU_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+JINA_API_KEY = os.getenv("JINA_API_KEY")
 
-def get_env():
-    env_dict = {}
-    with open (file=".env" if os.path.exists(".env") else "env", mode="r") as f:
-        for line in f:
-            key, value = line.strip().split("=")
-            env_dict[key] = value.strip('"')
-    return env_dict
 
 """Hugging Face Llama model"""
 
-env = get_env()
-
-HF_TOKEN = get_env()["HF_TOKEN"]
 global model_name, model, tokenizer
 global rand_seed
 
@@ -61,13 +57,15 @@ from llama_index.core import Settings
 def getOpenAIRetriever(documents: list[str], similarity_top_k: int = 1):
     """OpenAI RAG model"""
     import openai
-    openai.api_key = get_env()["OPENAI_API_KEY"]        
+    if not OPENAI_API_KEY:
+        raise ValueError("OPENAI_API_KEY not found")
+    openai.api_key = OPENAI_API_KEY
     # from llama_index.llms.openai import OpenAI
     # Settings.llm = OpenAI(model="gpt-3.5-turbo")
     
     from llama_index.embeddings.openai import OpenAIEmbedding
     # Set the embed_model in llama_index
-    Settings.embed_model = OpenAIEmbedding(model_name="text-embedding-3-small", api_key=get_env()["OPENAI_API_KEY"], title="openai-embedding")
+    Settings.embed_model = OpenAIEmbedding(model_name="text-embedding-3-small", api_key=OPENAI_API_KEY, title="openai-embedding")
     # model_name: "text-embedding-3-small", "text-embedding-3-large"
     
     # Create the OpenAI retriever
@@ -81,7 +79,8 @@ def getOpenAIRetriever(documents: list[str], similarity_top_k: int = 1):
 
 def getGeminiRetriever(documents: list[str], similarity_top_k: int = 1):
     """Gemini Embedding RAG model"""
-    GOOGLE_API_KEY = get_env()["GOOGLE_API_KEY"]
+    if not GOOGLE_API_KEY:
+        raise ValueError("GOOGLE_API_KEY not found")
     from llama_index.embeddings.gemini import GeminiEmbedding
     model_name = "models/embedding-001"
     # Set the embed_model in llama_index
@@ -118,8 +117,9 @@ def getBM25Retriever(documents: list[str], similarity_top_k: int = 1):
 
 def getJinaRetriever(documents: list[str], similarity_top_k: int = 1):
     """Jina Embedding model"""
+    if not JINA_API_KEY:
+        raise ValueError("JINA_API_KEY not found")
     try:
-        JINA_API_KEY = get_env()["JINA_API_KEY"]
         from llama_index.embeddings.jinaai import JinaEmbedding
         model_name = "jina-embeddings-v3"
         Settings.embed_model = JinaEmbedding(

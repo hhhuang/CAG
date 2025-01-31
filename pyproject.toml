@@ -121,6 +121,7 @@ dependencies = [
     "wrapt>=1.17.0",
     "yarl>=1.18.3",
     "aiohappyeyeballs>=2.4.4",
+    "python-dotenv>=1.0.1",
 ]
 requires-python = ">=3.10"
 readme = "README.md"

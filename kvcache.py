@@ -14,26 +14,15 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+from dotenv import load_dotenv
+load_dotenv()
 
-def get_env():
-    env_dict = {}
-    with open(file=".env" if os.path.exists(".env") else "env", mode="r") as f:
-        for line in f:
-            key, value = line.strip().split("=")
-            env_dict[key] = value.strip('"')
-    return env_dict
+HF_TOKEN = os.getenv("HF_TOKEN")
+if not HF_TOKEN:
+    raise ValueError("HF_TOKEN not found")
 
-def validate_env_variables():
-    required_keys = ["HF_TOKEN"]
-    env = get_env()
-    for key in required_keys:
-        if key not in env or not env[key]:
-            raise ValueError(f"Missing required environment variable: {key}")
-    return env
 
 """Hugging Face Llama model"""
-env = validate_env_variables()
-HF_TOKEN = env["HF_TOKEN"]
 
 global model_name, model, tokenizer
 global rand_seed
@@ -142,7 +131,7 @@ def clean_up(kv: DynamicCache, origin_len: int):
         kv.value_cache[i] = kv.value_cache[i][:, :, :origin_len, :]
 
 
-def read_kv_cache(path: str) -> DynamicCache:
+def read_kv_cache(path: str) -> DynamicCache | None:
     """
     Read the KV Cache from a file. If the cache file is invalid or empty, return None.
     """
@@ -168,7 +157,7 @@ def get_bert_similarity(response, ground_truth):
     return cosine_score.item()
 
 
-def prepare_kvcache(documents, filepath: str = "./data_cache/cache_knowledges.pt", answer_instruction: str = None):
+def prepare_kvcache(documents, filepath: str = "./data_cache/cache_knowledges.pt", answer_instruction: str | None = None):
     # Prepare the knowledges kvcache
 
     if answer_instruction is None:
@@ -219,8 +208,7 @@ def parse_squad_data(raw):
     return dataset
 
 
-def get_squad_dataset(filepath: str, max_knowledge: int = None,
-                      max_paragraph: int = None, max_questions: int = None):
+def get_squad_dataset(filepath: str, max_knowledge: int | None = None, max_paragraph: int | None = None, max_questions: int | None = None):
     # Open and read the JSON file
     with open(filepath, 'r') as file:
         data = json.load(file)
@@ -231,13 +219,15 @@ def get_squad_dataset(filepath: str, max_knowledge: int = None,
 
     # Set the limit Maximum Articles, use all Articles if max_knowledge is None or greater than the number of Articles
     max_knowledge = max_knowledge if max_knowledge is not None and max_knowledge < len(parsed_data['ki_text']) else len(parsed_data['ki_text'])
+    max_paragraph = max_paragraph if max_knowledge == 1 else None
 
     # Shuffle the Articles and Questions
     if rand_seed is not None:
         random.seed(rand_seed)
         random.shuffle(parsed_data["ki_text"])
         random.shuffle(parsed_data["qas"])
-        k_ids = [i['id'] for i in parsed_data["ki_text"][:max_knowledge]]
+    
+    k_ids = [i['id'] for i in parsed_data["ki_text"][:max_knowledge]]
 
     text_list = []
     # Get the knowledge Articles for at most max_knowledge, or all Articles if max_knowledge is None
@@ -255,7 +245,7 @@ def get_squad_dataset(filepath: str, max_knowledge: int = None,
     return text_list, dataset
 
 
-def get_hotpotqa_dataset(filepath: str, max_knowledge: int = None):
+def get_hotpotqa_dataset(filepath: str, max_knowledge: int | None = None):
     # Open and read the JSON
     with open(filepath, "r") as file:
         data = json.load(file)
@@ -274,7 +264,7 @@ def get_hotpotqa_dataset(filepath: str, max_knowledge: int = None):
         max_knowledge = min(max_knowledge, len(data))
 
     text_list = []
-    for i, qa in enumerate(data[:max_knowledge]):
+    for _, qa in enumerate(data[:max_knowledge]):
         context = qa['context']
         context = [c[0] + ": \n" + "".join(c[1]) for c in context]
         article = "\n\n".join(context)
@@ -286,6 +276,8 @@ def get_hotpotqa_dataset(filepath: str, max_knowledge: int = None):
 
 def kvcache_test(args: argparse.Namespace):
     answer_instruction = None
+    text_list = []
+    dataset = []
     if args.dataset == "kis_sample":
         datapath = "./datasets/rag_sample_qas_from_kis.csv"
         text_list, dataset = get_kis_dataset(datapath)

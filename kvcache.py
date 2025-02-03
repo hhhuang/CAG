@@ -166,34 +166,8 @@ def prepare_kvcache(documents, filepath: str = "./data_cache/cache_knowledges.pt
 
 
 def kvcache_test(args: argparse.Namespace):
-    answer_instruction = None
-    text_list = []
-    dataset = []
-    if args.dataset == "kis_sample":
-        datapath = "./datasets/rag_sample_qas_from_kis.csv"
-        text_list, dataset = cagds.kis(datapath)
-    if args.dataset == "kis":
-        datapath = "./datasets/synthetic_knowledge_items.csv"
-        text_list, dataset = cagds.kis(datapath)
-    if args.dataset == "squad-dev":
-        datapath = "./datasets/squad/dev-v1.1.json"
-        text_list, dataset = cagds.squad(datapath, max_knowledge=args.maxKnowledge, max_paragraph=args.maxParagraph, max_questions=args.maxQuestion)
-    if args.dataset == "squad-train":
-        datapath = "./datasets/squad/train-v1.1.json"
-        text_list, dataset = cagds.squad(datapath, max_knowledge=args.maxKnowledge, max_paragraph=args.maxParagraph, max_questions=args.maxQuestion)
-        answer_instruction = "Answer the question with a super short answer."
-    if args.dataset == "hotpotqa-dev":
-        datapath = "./datasets/hotpotqa/hotpot_dev_fullwiki_v1.json"
-        text_list, dataset = cagds.hotpotqa(datapath, args.maxKnowledge)
-        answer_instruction = "Answer the question with a super short answer."
-    if args.dataset == "hotpotqa-test":
-        datapath = "./datasets/hotpotqa/hotpot_test_fullwiki_v1.json"
-        text_list, dataset = cagds.hotpotqa(datapath, args.maxKnowledge)
-        answer_instruction = "Answer the question with a super short answer."
-    if args.dataset == "hotpotqa-train":
-        datapath = "./datasets/hotpotqa/hotpot_train_v1.1.json"
-        text_list, dataset = cagds.hotpotqa(datapath, args.maxKnowledge)
-        answer_instruction = "Answer the question with a super short answer."
+    answer_instruction = "Answer the question with a super short answer."
+    text_list, dataset = cagds.get(args.dataset, max_knowledge=args.maxKnowledge, max_paragraph=args.maxParagraph, max_questions=args.maxQuestion)
 
     kvcache_path = "./data_cache/cache_knowledges.pt"
 

@@ -152,3 +152,35 @@ def kis(filepath: str) -> tuple[list[str], Iterator[tuple[str, str]]]:
     text_list = df["ki_text"].to_list()
 
     return text_list, dataset
+
+
+def get(
+    dataset: str,
+    max_knowledge: int | None = None,
+    max_paragraph: int | None = None,
+    max_questions: int | None = None,
+) -> tuple[list[str], Iterator[tuple[str, str]]]:
+    match dataset:
+        case "kis_sample":
+            path = "./datasets/rag_sample_qas_from_kis.csv"
+            return kis(path)
+        case "kis":
+            path = "./datasets/synthetic_knowledge_items.csv"
+            return kis(path)
+        case "squad-dev":
+            path = "./datasets/squad/dev-v1.1.json"
+            return squad(path, max_knowledge, max_paragraph, max_questions)
+        case "squad-train":
+            path = "./datasets/squad/train-v1.1.json"
+            return squad(path, max_knowledge, max_paragraph, max_questions)
+        case "hotpotqa-dev":
+            path = "./datasets/hotpotqa/hotpot_dev_fullwiki_v1.json"
+            return hotpotqa(path, max_knowledge)
+        case "hotpotqa-test":
+            path = "./datasets/hotpotqa/hotpot_test_fullwiki_v1.json"
+            return hotpotqa(path, max_knowledge)
+        case "hotpotqa-train":
+            path = "./datasets/hotpotqa/hotpot_train_v1.1.json"
+            return hotpotqa(path, max_knowledge)
+        case _:
+            return [], zip([], [])

@@ -287,7 +287,7 @@ if __name__ == "__main__":
     parser.add_argument('--maxKnowledge', required=False, default=None ,type=int, help='Maximum number of knowledge items to use')
     parser.add_argument('--maxParagraph', required=False, default=None ,type=int, help='Maximum number of paragraph to use')
     parser.add_argument('--topk', required=False, default=1, type=int, help='Top K retrievals to use')
-    parser.add_argument('--dataset', required=True, help='Dataset to use (kis, kis_sample, squad-dev, squad-train)', 
+    parser.add_argument('--dataset', required=True, help='Dataset to use (kis, squad or hotpotqa)', 
                         choices=['kis', 'kis_sample', 
                                 'squad-dev', 'squad-train', 
                                 'hotpotqa-dev',  'hotpotqa-train', 'hotpotqa-test'])

@@ -7,7 +7,7 @@ from time import time
 from transformers import BitsAndBytesConfig, AutoTokenizer, AutoModelForCausalLM
 from transformers.cache_utils import DynamicCache
 import logging 
-from config import rand_seed
+from config import ConfigName, set_config
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -332,7 +332,8 @@ if __name__ == "__main__":
     print("maxKnowledge", args.maxKnowledge, "maxParagraph", args.maxParagraph, "maxQuestion", args.maxQuestion, "randomeSeed", args.randomSeed)
 
     model_name = args.modelname
-    rand_seed = args.randomSeed if args.randomSeed is not None else None
+    if args.randomSeed != None:
+        set_config(ConfigName.RAND_SEED, args.randomSeed)
 
     if args.quantized:
         tokenizer, model = load_quantized_model(model_name=model_name, hf_token=HF_TOKEN)

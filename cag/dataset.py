@@ -2,8 +2,9 @@ import json
 import random
 import pandas as pd
 from typing import Iterator
-from config import rand_seed
+from config import ConfigName, get_config
 
+rand_seed = None
 
 def _parse_squad_data(raw):
     dataset = {"ki_text": [], "qas": []}
@@ -159,6 +160,8 @@ def get(
     max_paragraph: int | None = None,
     max_questions: int | None = None,
 ) -> tuple[list[str], Iterator[tuple[str, str]]]:
+    global rand_seed
+    rand_seed = get_config(ConfigName.RAND_SEED)
     match dataset:
         case "kis_sample":
             path = "./datasets/rag_sample_qas_from_kis.csv"

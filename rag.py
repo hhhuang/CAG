@@ -8,6 +8,7 @@ import argparse
 import os
 from transformers import BitsAndBytesConfig
 import logging
+from config import rand_seed
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -26,7 +27,6 @@ JINA_API_KEY = os.getenv("JINA_API_KEY")
 """Hugging Face Llama model"""
 
 global model_name, model, tokenizer
-global rand_seed
 
 # Allowlist the DynamicCache class
 torch.serialization.add_safe_globals([DynamicCache])

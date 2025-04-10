@@ -7,6 +7,7 @@ from time import time
 from transformers import BitsAndBytesConfig, AutoTokenizer, AutoModelForCausalLM
 from transformers.cache_utils import DynamicCache
 import logging 
+from config import rand_seed
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -23,7 +24,6 @@ if not HF_TOKEN:
 """Hugging Face Llama model"""
 
 global model_name, model, tokenizer
-global rand_seed
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

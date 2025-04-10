@@ -2,9 +2,7 @@ import json
 import random
 import pandas as pd
 from typing import Iterator
-
-
-rand_seed = None
+from config import rand_seed
 
 
 def _parse_squad_data(raw):
@@ -70,6 +68,7 @@ def squad(
 
     # Shuffle the Articles and Questions
     if rand_seed is not None:
+        print("rand_seed", rand_seed)
         random.seed(rand_seed)
         random.shuffle(parsed_data["ki_text"])
         random.shuffle(parsed_data["qas"])

@@ -69,7 +69,7 @@ def squad(
 
     # Shuffle the Articles and Questions
     if rand_seed is not None:
-        print("rand_seed", rand_seed)
+        print("rand_seed: ", rand_seed)
         random.seed(rand_seed)
         random.shuffle(parsed_data["ki_text"])
         random.shuffle(parsed_data["qas"])
@@ -119,6 +119,7 @@ def hotpotqa(
         data = json.load(file)
 
     if rand_seed is not None:
+        print("rand_seed: ", rand_seed)
         random.seed(rand_seed)
         random.shuffle(data)
 

@@ -2,10 +2,9 @@ import json
 import random
 import pandas as pd
 from typing import Iterator
-
+from config import ConfigName, get_config
 
 rand_seed = None
-
 
 def _parse_squad_data(raw):
     dataset = {"ki_text": [], "qas": []}
@@ -70,6 +69,7 @@ def squad(
 
     # Shuffle the Articles and Questions
     if rand_seed is not None:
+        print("rand_seed: ", rand_seed)
         random.seed(rand_seed)
         random.shuffle(parsed_data["ki_text"])
         random.shuffle(parsed_data["qas"])
@@ -119,6 +119,7 @@ def hotpotqa(
         data = json.load(file)
 
     if rand_seed is not None:
+        print("rand_seed: ", rand_seed)
         random.seed(rand_seed)
         random.shuffle(data)
 
@@ -160,6 +161,8 @@ def get(
     max_paragraph: int | None = None,
     max_questions: int | None = None,
 ) -> tuple[list[str], Iterator[tuple[str, str]]]:
+    global rand_seed
+    rand_seed = get_config(ConfigName.RAND_SEED)
     match dataset:
         case "kis_sample":
             path = "./datasets/rag_sample_qas_from_kis.csv"

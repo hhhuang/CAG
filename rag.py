@@ -8,6 +8,7 @@ import argparse
 import os
 from transformers import BitsAndBytesConfig
 import logging
+from config import ConfigName, set_config
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -26,7 +27,6 @@ JINA_API_KEY = os.getenv("JINA_API_KEY")
 """Hugging Face Llama model"""
 
 global model_name, model, tokenizer
-global rand_seed
 
 # Allowlist the DynamicCache class
 torch.serialization.add_safe_globals([DynamicCache])
@@ -300,7 +300,8 @@ if __name__ == "__main__":
     print("maxKnowledge", args.maxKnowledge, "maxParagraph", args.maxParagraph, "maxQuestion", args.maxQuestion, "randomSeed", args.randomSeed)
     
     model_name = args.modelname
-    rand_seed = args.randomSeed if args.randomSeed != None else None
+    if args.randomSeed != None:
+        set_config(ConfigName.RAND_SEED, args.randomSeed)
     
     if args.quantized:
         tokenizer, model = load_quantized_model(model_name=model_name, hf_token=HF_TOKEN)
